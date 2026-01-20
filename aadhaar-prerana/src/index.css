@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Government Dashboard specific styles */
+.gov-card {
+  @apply bg-white rounded-lg border border-slate-200 shadow-sm;
+}
+
+.gov-card-header {
+  @apply px-5 py-4 border-b border-slate-100;
+}
+
+.gov-card-body {
+  @apply p-5;
+}
+
+.gov-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.gov-badge-danger {
+  @apply bg-red-100 text-red-800;
+}
+
+.gov-badge-warning {
+  @apply bg-amber-100 text-amber-800;
+}
+
+.gov-badge-success {
+  @apply bg-green-100 text-green-800;
+}
+
+.gov-badge-info {
+  @apply bg-blue-100 text-blue-800;
+}
+
+/* Data point emphasis */
+.data-highlight {
+  @apply font-semibold text-uidai-navy;
+}
+
+/* Action buttons */
+.gov-action-btn {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all duration-200;
+}
+
+.gov-action-btn-primary {
+  @apply bg-uidai-navy text-white hover:bg-uidai-navy-light;
+}
+
+.gov-action-btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700;
+}
+
+.gov-action-btn-success {
+  @apply bg-uidai-green text-white hover:bg-uidai-green-light;
+}
