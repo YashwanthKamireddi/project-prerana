@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { ShieldAlert, Lock, AlertTriangle, Eye, EyeOff } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 const chartData = [
-    { day: 'Jan 1', value: 42 }, { day: 'Jan 3', value: 48 }, { day: 'Jan 5', value: 45 },
-    { day: 'Jan 7', value: 51 }, { day: 'Jan 9', value: 47 }, { day: 'Jan 11', value: 44 },
-    { day: 'Jan 13', value: 72 }, { day: 'Jan 14', value: 890 }, { day: 'Jan 15', value: 1450 },
-    { day: 'Jan 16', value: 1060 }, { day: 'Jan 17', value: 320 }, { day: 'Jan 18', value: 145 },
-    { day: 'Jan 19', value: 78 }, { day: 'Jan 20', value: 52 }
+    { day: '1', v: 42 }, { day: '5', v: 48 }, { day: '9', v: 45 },
+    { day: '13', v: 72 }, { day: '14', v: 890 }, { day: '15', v: 1450 },
+    { day: '16', v: 1060 }, { day: '17', v: 320 }, { day: '19', v: 78 }
 ];
 
 const anomaly = {
@@ -16,84 +14,82 @@ const anomaly = {
     location: 'Surat, Gujarat',
     pincodes: ['395001', '395003', '395006', '395007'],
     zScore: 4.7,
-    confidence: 94.7,
-    correlatedEvent: 'Army Recruitment Rally - Jan 25'
+    event: 'Army Recruitment Rally - Jan 25'
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload?.[0]) {
-        const val = payload[0].value;
-        const isAnomaly = val > 200;
-        return (
-            <div className={`px-3 py-2 rounded shadow-lg border text-sm ${isAnomaly ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'}`}>
-                <p className="text-slate-500 text-xs">{label}</p>
-                <p className={`font-semibold ${isAnomaly ? 'text-red-600' : 'text-slate-800'}`}>
-                    {val.toLocaleString()} updates
-                </p>
-            </div>
-        );
-    }
-    return null;
-};
-
-export default function IntegrityShield() {
+export default function IntegrityShield({ onAction }) {
     const [showDetails, setShowDetails] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [frozen, setFrozen] = useState(false);
+
+    const handleFreeze = () => {
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+            setFrozen(true);
+            onAction?.('freeze-updates', {
+                count: anomaly.count,
+                location: anomaly.location
+            });
+        }, 800);
+    };
 
     return (
-        <div className="gov-card h-full">
-            <div className="gov-card-header flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center">
-                        <ShieldAlert size={18} className="text-red-600" />
+        <div className="bg-white rounded-lg border border-slate-200 h-full flex flex-col">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-red-100 flex items-center justify-center">
+                        <ShieldAlert size={16} className="text-red-600" />
                     </div>
                     <div>
-                        <h3 className="heading-sm">Integrity Shield</h3>
-                        <p className="text-xs text-slate-500">Fraud Detection System</p>
+                        <h3 className="text-sm font-semibold text-slate-800">INTEGRITY Engine</h3>
+                        <p className="text-[10px] text-slate-500">Fraud Detection</p>
                     </div>
                 </div>
-                <span className="gov-badge gov-badge-danger">Active Threat</span>
+                <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${frozen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {frozen ? 'Resolved' : 'Active Threat'}
+                </span>
             </div>
 
-            <div className="gov-card-body">
+            {/* Body */}
+            <div className="p-4 flex-1 flex flex-col">
                 {/* Alert */}
-                <div className="alert alert-danger mb-4">
-                    <div className="flex items-start gap-3">
-                        <AlertTriangle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
+                <div className={`p-3 rounded-lg mb-3 ${frozen ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                    <div className="flex items-start gap-2">
+                        <AlertTriangle size={16} className={frozen ? 'text-green-600' : 'text-red-600'} />
                         <div>
-                            <p className="font-medium text-sm">Anomaly Detected (Z-Score: {anomaly.zScore})</p>
-                            <p className="text-sm mt-1">
+                            <p className={`text-xs font-medium ${frozen ? 'text-green-800' : 'text-red-800'}`}>
+                                {frozen ? 'Cohort Frozen Successfully' : `Anomaly Detected (Z: ${anomaly.zScore})`}
+                            </p>
+                            <p className={`text-[11px] mt-0.5 ${frozen ? 'text-green-700' : 'text-red-700'}`}>
                                 <strong>{anomaly.count.toLocaleString()}</strong> DOB/Age updates • {anomaly.cohort}
                             </p>
-                            <p className="text-xs mt-1">Location: {anomaly.location}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Correlated Event */}
-                <div className="alert alert-warning mb-4 py-2">
-                    <p className="text-xs">
-                        <strong>Correlated Event:</strong> {anomaly.correlatedEvent}
-                    </p>
+                <div className="p-2 bg-amber-50 border border-amber-200 rounded text-[11px] text-amber-800 mb-3">
+                    <strong>Event:</strong> {anomaly.event}
                 </div>
 
                 {/* Chart */}
-                <div className="h-40">
+                <div className="h-28 mb-3">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                            <XAxis dataKey="day" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval={2} />
-                            <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => v > 1000 ? `${(v / 1000).toFixed(0)}K` : v} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <ReferenceLine y={45} stroke="#94a3b8" strokeDasharray="4 4" />
-                            <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="4 4" />
+                            <XAxis dataKey="day" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                            <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={v => v > 1000 ? `${(v / 1000).toFixed(0)}K` : v} />
+                            <ReferenceLine y={45} stroke="#94a3b8" strokeDasharray="3 3" />
+                            <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="3 3" />
                             <Line
                                 type="monotone"
-                                dataKey="value"
+                                dataKey="v"
                                 stroke="#1e40af"
                                 strokeWidth={2}
                                 dot={(props) => {
-                                    const isAnomaly = props.payload.value > 200;
-                                    return <circle cx={props.cx} cy={props.cy} r={isAnomaly ? 4 : 2} fill={isAnomaly ? '#dc2626' : '#1e40af'} />;
+                                    const isHigh = props.payload.v > 200;
+                                    return <circle cx={props.cx} cy={props.cy} r={isHigh ? 4 : 2} fill={isHigh ? '#dc2626' : '#1e40af'} />;
                                 }}
                             />
                         </LineChart>
@@ -101,42 +97,50 @@ export default function IntegrityShield() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-4 gap-2 mt-3">
+                <div className="grid grid-cols-4 gap-1 mb-3">
                     {[
                         { label: 'Peak', value: 'Jan 15' },
-                        { label: 'Affected', value: '3,400' },
-                        { label: 'Pincodes', value: '4' },
-                        { label: 'Confidence', value: '94.7%' }
+                        { label: 'Count', value: '3,400' },
+                        { label: 'Pins', value: '4' },
+                        { label: 'Conf', value: '94.7%' }
                     ].map(item => (
-                        <div key={item.label} className="text-center p-2 bg-slate-50 rounded">
-                            <p className="text-xs text-slate-500">{item.label}</p>
-                            <p className="text-sm font-semibold text-slate-800">{item.value}</p>
+                        <div key={item.label} className="text-center p-1.5 bg-slate-50 rounded">
+                            <p className="text-[9px] text-slate-500">{item.label}</p>
+                            <p className="text-xs font-semibold text-slate-800">{item.value}</p>
                         </div>
                     ))}
                 </div>
 
-                {/* Details Toggle */}
+                {/* Details */}
                 {showDetails && (
-                    <div className="mt-3 p-3 bg-slate-50 rounded text-xs space-y-1">
+                    <div className="p-2 bg-slate-50 rounded text-[10px] text-slate-600 mb-3">
                         <p><strong>Pincodes:</strong> {anomaly.pincodes.join(', ')}</p>
-                        <p><strong>Pattern:</strong> Potential Recruitment Fraud Ring</p>
+                        <p><strong>Pattern:</strong> Recruitment Fraud Ring</p>
                     </div>
                 )}
+            </div>
 
-                {/* Action */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-                    <button
-                        onClick={() => setShowDetails(!showDetails)}
-                        className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
-                    >
-                        {showDetails ? <EyeOff size={14} /> : <Eye size={14} />}
-                        {showDetails ? 'Hide' : 'Show'} Details
-                    </button>
-                    <button className="gov-btn gov-btn-danger flex items-center gap-2">
-                        <Lock size={16} />
-                        Freeze Updates
-                    </button>
-                </div>
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
+                <button onClick={() => setShowDetails(!showDetails)} className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                    {showDetails ? <EyeOff size={12} /> : <Eye size={12} />}
+                    {showDetails ? 'Hide' : 'Details'}
+                </button>
+                <button
+                    onClick={handleFreeze}
+                    disabled={loading || frozen}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-all ${frozen
+                            ? 'bg-green-100 text-green-700 cursor-default'
+                            : 'bg-red-600 text-white hover:bg-red-700 disabled:opacity-50'
+                        }`}
+                >
+                    {loading ? (
+                        <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    ) : (
+                        <Lock size={14} />
+                    )}
+                    {frozen ? 'Frozen ✓' : loading ? 'Freezing...' : 'Freeze Cohort'}
+                </button>
             </div>
         </div>
     );

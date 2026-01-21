@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Users, Truck, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LabelList } from 'recharts';
 
 const districtData = [
     { name: 'Sitamarhi', enrolled: 15000, updated: 4000, gap: 11000 },
     { name: 'Darbhanga', enrolled: 12500, updated: 5200, gap: 7300 },
     { name: 'Madhubani', enrolled: 10800, updated: 3600, gap: 7200 },
     { name: 'Saharsa', enrolled: 9200, updated: 4100, gap: 5100 },
-    { name: 'Purnia', enrolled: 8700, updated: 4800, gap: 3900 },
 ];
 
 const focusDistrict = {
@@ -19,156 +18,139 @@ const focusDistrict = {
     lastVan: '45 days ago'
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload?.length) {
-        const enrolled = payload.find(p => p.dataKey === 'enrolled')?.value || 0;
-        const updated = payload.find(p => p.dataKey === 'updated')?.value || 0;
-        const gap = enrolled - updated;
-        return (
-            <div className="bg-white border border-slate-200 rounded shadow-lg p-3 text-sm">
-                <p className="font-medium text-slate-800 mb-2">{label}</p>
-                <div className="space-y-1 text-xs">
-                    <p className="flex justify-between gap-4">
-                        <span className="text-slate-500">Birth Enrollments</span>
-                        <span className="font-medium text-green-600">{enrolled.toLocaleString()}</span>
-                    </p>
-                    <p className="flex justify-between gap-4">
-                        <span className="text-slate-500">Biometric Updates</span>
-                        <span className="font-medium text-blue-600">{updated.toLocaleString()}</span>
-                    </p>
-                    <hr className="my-1" />
-                    <p className="flex justify-between gap-4">
-                        <span className="text-red-600 font-medium">At Risk</span>
-                        <span className="font-bold text-red-600">{gap.toLocaleString()}</span>
-                    </p>
-                </div>
-            </div>
-        );
-    }
-    return null;
-};
-
-export default function GenesisTrigger() {
+export default function GenesisTrigger({ onAction }) {
     const [showInsights, setShowInsights] = useState(false);
     const [selected, setSelected] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [deployed, setDeployed] = useState(false);
 
     const totalGap = districtData.reduce((sum, d) => sum + d.gap, 0);
 
+    const handleDeploy = () => {
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+            setDeployed(true);
+            onAction?.('deploy-van', {
+                district: districtData[selected].name,
+                state: 'Bihar'
+            });
+        }, 800);
+    };
+
     return (
-        <div className="gov-card">
-            <div className="gov-card-header flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center">
-                        <Users size={18} className="text-amber-600" />
+        <div className="bg-white rounded-lg border border-slate-200 h-full flex flex-col">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-amber-100 flex items-center justify-center">
+                        <Users size={16} className="text-amber-600" />
                     </div>
                     <div>
-                        <h3 className="heading-sm">Genesis Trigger</h3>
-                        <p className="text-xs text-slate-500">Child Inclusion Gap Analysis</p>
+                        <h3 className="text-sm font-semibold text-slate-800">GENESIS Engine</h3>
+                        <p className="text-[10px] text-slate-500">Child Inclusion Gap</p>
                     </div>
                 </div>
-                <span className="gov-badge gov-badge-warning">Action Required</span>
+                <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${deployed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {deployed ? 'Van Deployed' : 'Action Required'}
+                </span>
             </div>
 
-            <div className="gov-card-body">
-                {/* Focus Alert */}
-                <div className="alert alert-warning mb-4">
-                    <div className="flex items-start gap-3">
-                        <Users size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+            {/* Body */}
+            <div className="p-4 flex-1 flex flex-col">
+                {/* Alert */}
+                <div className={`p-3 rounded-lg mb-3 ${deployed ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
+                    <div className="flex items-start gap-2">
+                        <Users size={16} className={deployed ? 'text-green-600' : 'text-amber-600'} />
                         <div>
-                            <p className="font-medium text-sm">Focus: {focusDistrict.name} District</p>
-                            <p className="text-sm mt-1">
+                            <p className={`text-xs font-medium ${deployed ? 'text-green-800' : 'text-amber-800'}`}>
+                                {deployed ? `Van deployed to ${districtData[selected].name}` : `Focus: ${focusDistrict.name} District`}
+                            </p>
+                            <p className={`text-[11px] mt-0.5 ${deployed ? 'text-green-700' : 'text-amber-700'}`}>
                                 <strong className="text-red-600">{focusDistrict.gap.toLocaleString()}</strong> children at risk ({focusDistrict.gapPercent}% gap)
                             </p>
-                            <p className="text-xs mt-1">Avg age: {focusDistrict.avgAge} • Last van: {focusDistrict.lastVan}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Chart */}
-                <div className="h-48">
+                <div className="h-32 mb-3">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={districtData} margin={{ top: 15, right: 10, left: -15, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                            <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                            <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => `${v / 1000}K`} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="enrolled" fill="#22c55e" radius={[3, 3, 0, 0]} onClick={(_, i) => setSelected(i)}>
+                        <BarChart data={districtData} margin={{ top: 15, right: 5, left: -20, bottom: 5 }}>
+                            <XAxis dataKey="name" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                            <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={v => `${v / 1000}K`} />
+                            <Bar dataKey="enrolled" fill="#22c55e" radius={[2, 2, 0, 0]} onClick={(_, i) => setSelected(i)}>
                                 {districtData.map((_, i) => (
                                     <Cell key={i} fill={selected === i ? '#16a34a' : '#86efac'} cursor="pointer" />
                                 ))}
                             </Bar>
-                            <Bar dataKey="updated" fill="#3b82f6" radius={[3, 3, 0, 0]} onClick={(_, i) => setSelected(i)}>
+                            <Bar dataKey="updated" fill="#3b82f6" radius={[2, 2, 0, 0]} onClick={(_, i) => setSelected(i)}>
                                 {districtData.map((_, i) => (
                                     <Cell key={i} fill={selected === i ? '#1d4ed8' : '#93c5fd'} cursor="pointer" />
                                 ))}
-                                <LabelList
-                                    dataKey="gap"
-                                    position="top"
-                                    formatter={v => `-${(v / 1000).toFixed(1)}K`}
-                                    style={{ fontSize: 9, fill: '#dc2626', fontWeight: 600 }}
-                                />
+                                <LabelList dataKey="gap" position="top" formatter={v => `-${(v / 1000).toFixed(0)}K`} style={{ fontSize: 8, fill: '#dc2626', fontWeight: 600 }} />
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
 
                 {/* Legend */}
-                <div className="flex justify-center gap-6 mt-2 text-xs">
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-400"></span>Birth Enrollments</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-blue-400"></span>Biometric Updates</span>
-                    <span className="flex items-center gap-1.5 text-red-600 font-medium">-Gap = At Risk</span>
+                <div className="flex justify-center gap-4 text-[10px] mb-3">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-green-400"></span>Enrolled</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-blue-400"></span>Updated</span>
+                    <span className="text-red-600 font-medium">-Gap</span>
                 </div>
 
                 {/* Total */}
-                <div className="mt-4 p-3 bg-red-50 rounded-lg flex items-center justify-between">
+                <div className="p-2 bg-red-50 rounded-lg flex items-center justify-between mb-3">
                     <div>
-                        <p className="text-xs text-red-600">Total Children at Risk (Bihar)</p>
-                        <p className="text-2xl font-bold text-red-700">{totalGap.toLocaleString()}</p>
+                        <p className="text-[10px] text-red-600">Total At Risk (Bihar)</p>
+                        <p className="text-lg font-bold text-red-700">{totalGap.toLocaleString()}</p>
                     </div>
                     <div className="text-right">
-                        <p className="text-xl font-bold text-slate-700">{districtData.length}</p>
-                        <p className="text-xs text-slate-500">Districts</p>
+                        <p className="text-lg font-bold text-slate-700">{districtData.length}</p>
+                        <p className="text-[10px] text-slate-500">Districts</p>
                     </div>
                 </div>
 
                 {/* Insights Toggle */}
-                <button
-                    onClick={() => setShowInsights(!showInsights)}
-                    className="w-full mt-3 p-2 bg-slate-50 rounded flex items-center justify-between text-sm hover:bg-slate-100 transition-colors"
-                >
-                    <span className="font-medium text-slate-700">Analysis Insights</span>
-                    {showInsights ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                <button onClick={() => setShowInsights(!showInsights)} className="w-full p-2 bg-slate-50 rounded flex items-center justify-between text-xs hover:bg-slate-100 transition-colors">
+                    <span className="font-medium text-slate-700">Insights</span>
+                    {showInsights ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
 
                 {showInsights && (
-                    <div className="mt-2 p-3 bg-slate-50 rounded text-xs space-y-2">
-                        <p className="text-slate-600"><strong>Finding:</strong> High exclusion correlates with areas lacking permanent Aadhaar Seva Kendras.</p>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="p-2 bg-blue-50 rounded text-center">
-                                <p className="text-blue-600">Male</p>
-                                <p className="font-bold text-blue-700">52%</p>
-                            </div>
-                            <div className="p-2 bg-pink-50 rounded text-center">
-                                <p className="text-pink-600">Female</p>
-                                <p className="font-bold text-pink-700">48%</p>
-                            </div>
+                    <div className="mt-2 p-2 bg-slate-50 rounded text-[10px] space-y-1">
+                        <p className="text-slate-600">High exclusion correlates with areas lacking Aadhaar Seva Kendras.</p>
+                        <div className="flex gap-2">
+                            <span className="px-2 py-0.5 bg-blue-100 rounded text-blue-700">Male: 52%</span>
+                            <span className="px-2 py-0.5 bg-pink-100 rounded text-pink-700">Female: 48%</span>
                         </div>
                     </div>
                 )}
+            </div>
 
-                {/* Action */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-1 text-xs text-slate-500">
-                        <MapPin size={12} />
-                        Pincodes: {focusDistrict.pincodes.map((p, i) => (
-                            <span key={p} className="font-mono">{p}{i < focusDistrict.pincodes.length - 1 ? ', ' : ''}</span>
-                        ))}
-                    </div>
-                    <button className="gov-btn gov-btn-primary flex items-center gap-2">
-                        <Truck size={16} />
-                        Deploy Mobile Van
-                    </button>
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <MapPin size={10} />
+                    {focusDistrict.pincodes.slice(0, 2).join(', ')}...
                 </div>
+                <button
+                    onClick={handleDeploy}
+                    disabled={loading || deployed}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-all ${deployed
+                            ? 'bg-green-100 text-green-700 cursor-default'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50'
+                        }`}
+                >
+                    {loading ? (
+                        <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    ) : (
+                        <Truck size={14} />
+                    )}
+                    {deployed ? 'Deployed ✓' : loading ? 'Deploying...' : 'Deploy Van'}
+                </button>
             </div>
         </div>
     );

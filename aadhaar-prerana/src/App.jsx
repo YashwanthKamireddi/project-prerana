@@ -23,7 +23,7 @@ const summaryStats = [
     { id: 'exclusion-risk', label: 'Exclusion Risk', value: 45230, change: '-2.1%', changeType: 'down', icon: Users },
 ];
 
-const recentActivity = [
+const initialActivity = [
     { id: 1, message: 'High velocity migration detected in Surat corridor', time: '2 min ago', status: 'pending' },
     { id: 2, message: 'Mobile van deployed to Sitamarhi district', time: '15 min ago', status: 'completed' },
     { id: 3, message: 'Age update anomaly flagged for review', time: '32 min ago', status: 'pending' },
@@ -35,9 +35,9 @@ function App() {
     const [stats, setStats] = useState(summaryStats);
     const [lastUpdate, setLastUpdate] = useState(new Date());
     const [notification, setNotification] = useState(null);
-    const [activities, setActivities] = useState(recentActivity);
+    const [activities, setActivities] = useState(initialActivity);
 
-    // Live counter effect
+    // Live counter
     useEffect(() => {
         const interval = setInterval(() => {
             setStats(prev => prev.map(stat => ({
@@ -49,17 +49,16 @@ function App() {
         return () => clearInterval(interval);
     }, []);
 
-    // Global action handler for demo
+    // Action handler for demo buttons
     const handleAction = (action, details) => {
         const messages = {
-            'allocate-ration': `✓ Ration quota allocated for ${details?.migrants || '28,450'} migrants in ${details?.location || 'Surat corridor'}`,
-            'freeze-updates': `✓ Cohort updates frozen for ${details?.count || '3,400'} records in ${details?.location || 'Surat'}`,
-            'deploy-van': `✓ Mobile van unit dispatched to ${details?.district || 'Sitamarhi'}, Bihar`,
+            'allocate-ration': `✓ Ration quota allocated for ${details?.migrants?.toLocaleString() || '28,450'} migrants in ${details?.location || 'Surat'}`,
+            'freeze-updates': `✓ Cohort updates frozen for ${details?.count?.toLocaleString() || '3,400'} records in ${details?.location || 'Surat'}`,
+            'deploy-van': `✓ Mobile van dispatched to ${details?.district || 'Sitamarhi'}, ${details?.state || 'Bihar'}`,
         };
 
-        setNotification({ type: 'success', message: messages[action] || 'Action completed' });
+        setNotification({ message: messages[action] || 'Action completed' });
 
-        // Add to activity log
         setActivities(prev => [{
             id: Date.now(),
             message: messages[action],
@@ -67,7 +66,6 @@ function App() {
             status: 'completed'
         }, ...prev.slice(0, 3)]);
 
-        // Update relevant stats
         if (action === 'allocate-ration') {
             setStats(prev => prev.map(s => s.id === 'migration-alerts' ? { ...s, value: Math.max(0, s.value - 1) } : s));
         } else if (action === 'freeze-updates') {
@@ -79,8 +77,6 @@ function App() {
         setTimeout(() => setNotification(null), 4000);
     };
 
-    const formatNumber = (num) => num.toLocaleString('en-IN');
-
     return (
         <div className="min-h-screen bg-slate-100 flex">
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -89,11 +85,11 @@ function App() {
                 <Header />
 
                 <main className="flex-1 p-5 overflow-auto">
-                    {/* Notification Toast */}
+                    {/* Toast Notification */}
                     {notification && (
-                        <div className="fixed top-20 right-5 z-50 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-in">
-                            <CheckCircle2 size={20} />
-                            <span className="text-sm font-medium">{notification.message}</span>
+                        <div className="fixed top-20 right-5 z-50 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 max-w-md">
+                            <CheckCircle2 size={18} />
+                            <span className="text-sm">{notification.message}</span>
                             <button onClick={() => setNotification(null)} className="ml-2 hover:opacity-80">
                                 <X size={16} />
                             </button>
@@ -119,24 +115,22 @@ function App() {
                         </div>
                     </div>
 
-                    {/* Stats Grid */}
+                    {/* Stats */}
                     <div className="grid grid-cols-4 gap-4 mb-5">
                         {stats.map((stat) => {
                             const Icon = stat.icon;
                             return (
-                                <div key={stat.id} className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                                <div key={stat.id} className="bg-white rounded-lg border border-slate-200 p-4">
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center">
                                             <Icon size={18} className="text-slate-600" />
                                         </div>
-                                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${stat.changeType === 'up' ? 'bg-green-100 text-green-700' :
-                                                stat.changeType === 'down' ? 'bg-green-100 text-green-700' :
-                                                    'bg-red-100 text-red-700'
+                                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${stat.changeType === 'danger' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                                             }`}>
                                             {stat.change}
                                         </span>
                                     </div>
-                                    <p className="text-2xl font-semibold text-slate-800 tabular-nums">{formatNumber(stat.value)}</p>
+                                    <p className="text-2xl font-semibold text-slate-800 tabular-nums">{stat.value.toLocaleString('en-IN')}</p>
                                     <p className="text-sm text-slate-500 mt-1">{stat.label}</p>
                                 </div>
                             );
@@ -150,15 +144,15 @@ function App() {
                         <GenesisTrigger onAction={handleAction} />
                     </div>
 
-                    {/* Recent Activity */}
+                    {/* Activity Log */}
                     <div className="bg-white rounded-lg border border-slate-200">
                         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                             <h3 className="font-medium text-slate-800">Recent Activity</h3>
                             <span className="text-xs text-slate-400">{activities.length} events</span>
                         </div>
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-slate-100 max-h-48 overflow-auto">
                             {activities.map((item) => (
-                                <div key={item.id} className="px-5 py-3 hover:bg-slate-50 transition-colors flex items-start gap-3">
+                                <div key={item.id} className="px-5 py-3 hover:bg-slate-50 flex items-start gap-3">
                                     <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${item.status === 'completed' ? 'bg-green-100' : 'bg-amber-100'
                                         }`}>
                                         {item.status === 'completed' ? (
@@ -167,7 +161,7 @@ function App() {
                                             <Clock size={12} className="text-amber-600" />
                                         )}
                                     </div>
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1">
                                         <p className="text-sm text-slate-700">{item.message}</p>
                                         <p className="text-xs text-slate-400 mt-1">{item.time}</p>
                                     </div>
@@ -178,9 +172,7 @@ function App() {
 
                     {/* Footer */}
                     <div className="mt-6 pt-4 border-t border-slate-200 text-center">
-                        <p className="text-xs text-slate-400">
-                            AADHAAR-PRERANA Policy Intelligence Engine • UIDAI
-                        </p>
+                        <p className="text-xs text-slate-400">AADHAAR-PRERANA • UIDAI</p>
                     </div>
                 </main>
             </div>
